@@ -1,0 +1,74 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "description": "Default build configuration for ImpactEngine",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_IMPACT_EDITOR": "OFF"
+      }
+    },
+    {
+      "name": "static",
+      "description": "Build engine as static library",
+      "inherits": "default",
+      "cacheVariables": {
+        "BUILD_STATIC_LIBS": "OFF"
+      }
+    },
+    {
+      "name": "shared",
+      "description": "Build engine as shared library",
+      "inherits": "default",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON"
+      }
+    },
+    {
+      "name": "build-editor",
+      "description": "Build configuration for ImpactEngine and ImpactEditor",
+      "inherits": "default",
+      "cacheVariables": {
+        "BUILD_IMPACT_EDITOR": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug",
+      "configurePreset": "default",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "default",
+      "configuration": "Release"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "default",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "BuildEditorDebug",
+      "configurePreset": "build-editor",
+      "configuration": "Debug"
+    },
+    {
+      "name": "BuildEditorRelease",
+      "configurePreset": "build-editor",
+      "configuration": "Release"
+    }
+  ]
+}

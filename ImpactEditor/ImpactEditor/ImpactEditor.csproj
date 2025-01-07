@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <!-- https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trimming-options -->
+        <PublishTrimmed>true</PublishTrimmed>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <TrimMode>partial</TrimMode> <!-- partial or full -->
+        <BaseOutputPath>../../bin/ImpactEditor/bin</BaseOutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    </PropertyGroup>
+
+
+    <!-- Engine Configuration -->
+    <PropertyGroup>
+        <EngineBuildConfig Condition="'$(EngineBuildConfig)' == ''">Release</EngineBuildConfig>
+        <EngineBuildShared Condition="'$(EngineBuildShared)' == ''">false</EngineBuildShared>
+        <EngineLibName Condition="'$(EngineBuildConfig)' != 'Debug'">impact-engine</EngineLibName>
+        <EngineLibName Condition="'$(EngineBuildConfig)' == 'Debug'">impact-engine-d</EngineLibName>
+    </PropertyGroup>
+
+    <!-- Build the C++ engine before the managed build -->
+<Target Name="BuildCppEngine" BeforeTargets="BeforeBuild">
+    <PropertyGroup>
+        <!-- Choose the preset dynamically based on BuildShared -->
+        <CMakePreset Condition="'$(EngineBuildShared)' == 'true'">shared</CMakePreset>
+        <CMakePreset Condition="'$(EngineBuildShared)' != 'true'">static</CMakePreset>
+    </PropertyGroup>
+
+    <Message Importance="High" Text="Building C++ Engine in $(EngineBuildConfig) configuration (Shared: $(EngineBuildShared)). Using CMake preset: $(CMakePreset)" />
+    <Exec Command="cmake -S $(ProjectDir)..\.. --preset=$(CMakePreset) -B $(ProjectDir)..\..\build -DBUILD_IMPACT_EDITOR=OFF" IgnoreExitCode="false" />
+    <Exec Command="cmake --build $(ProjectDir)..\..\build --config $(EngineBuildConfig)" IgnoreExitCode="false" />
+</Target>
+
+
+    <!-- Condition to include either DLL/PDB or LIB -->
+    <ItemGroup Condition="'$(EngineBuildShared)' == 'true'">
+        <Content Include="$(ProjectDir)..\..\bin\ImpactEngine\bin\$(EngineBuildConfig)\$(EngineLibName).dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="$(ProjectDir)..\..\bin\ImpactEngine\bin\$(EngineBuildConfig)\$(EngineLibName).pdb" Condition="'$(EngineBuildConfig)' == 'Debug'">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(BuildShared)' != 'true'">
+        <Content Include="$(ProjectDir)..\..\bin\ImpactEngine\lib\$(EngineBuildConfig)\$(EngineLibName).lib">
+            <Link>impact-engine.lib</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
+        </Content>
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <Folder Include="Models\"/>
+        <AvaloniaResource Include="Assets\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="11.1.0"/>
+        <PackageReference Include="Avalonia.Desktop" Version="11.1.0"/>
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0"/>
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.0"/>
+        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.0"/>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
+    </ItemGroup>
+
+</Project>
